@@ -1,4 +1,4 @@
-# Infrastructure
+# Infrastructure as Code
 - Terraform
 - Docker
 - Packer
