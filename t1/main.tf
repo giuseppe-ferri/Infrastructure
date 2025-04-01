@@ -13,11 +13,6 @@ output "public_ip" {
   value       = aws_instance.example.public_ip
 }
 
-output "public_dns" {
-  description = "The public IPv4 DNS of the web server"
-  value       = aws_instance.example.public_dns
-}
-
 output "instance_id" {
   description = "The Instance ID"
   value       = aws_instance.example.id

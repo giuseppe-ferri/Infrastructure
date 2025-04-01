@@ -2,12 +2,23 @@ provider "aws" {
   region = "us-east-2"
 }
 
-resource "aws_s3_bucket" "terraform_state" {
-  bucket = "unique-name-jiow02"
+output "s3_bucket_arn" {
+  description = "The ARN of the S3 bucket"
+  value       = aws_s3_bucket.terraform_state.arn
+}
 
+output "dynamo_table_name" {
+  description = "The name of the DynamoDB table"
+  value       = aws_dynamodb_table.terraform_locks.name
+}
+
+resource "aws_s3_bucket" "terraform_state" {
+  bucket = "unique-name-bucket-jiow02"
+
+  force_destroy = true
   # Prevent accidental deletion of this S3 bucket
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false # default: true
   }
 }
 
@@ -39,3 +50,30 @@ resource "aws_s3_bucket_public_access_block" "public_access" {
   ignore_public_acls      = true
   restrict_public_buckets = true
 }
+
+# Use DynamoDB for locking with Terraform
+resource "aws_dynamodb_table" "terraform_locks" {
+  name         = "unique-name-dynamo-jiow02"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "LockID"
+
+
+  attribute {
+    name = "LockID"
+    type = "S"
+  }
+}
+
+# terraform {
+#   backend "s3" {
+#     # Replace this with your bucket table name!
+#     bucket = "unique-name-bucket-jiow02"
+#     key    = "global/s3/terraform.tfstate"
+#     region = "us-east-2"
+
+#     # Replace this with your DynamoDB table name!
+#     dynamodb_table = "unique-name-dynamo-jiow02"
+#     encrypt        = true
+#   }
+# }
+
