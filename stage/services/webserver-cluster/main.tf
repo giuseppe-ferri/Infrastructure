@@ -2,27 +2,6 @@ provider "aws" {
   region = "us-east-2"
 }
 
-variable "server_port" {
-  description = "The port the server will use for HTTP requests"
-  type        = number
-  default     = 8080
-}
-
-output "public_ip" {
-  description = "The public IPv4 address of the web server"
-  value       = aws_instance.example.public_ip
-}
-
-output "instance_id" {
-  description = "The Instance ID"
-  value       = aws_instance.example.id
-}
-
-output "alb_dns_name" {
-  description = "The domain name of the load balancer"
-  value       = aws_lb.example.dns_name
-}
-
 resource "aws_instance" "example" {
   ami                    = "ami-0fb653ca2d3203ac1"
   instance_type          = "t2.micro"
@@ -57,13 +36,19 @@ resource "aws_launch_template" "example" {
   instance_type          = "t2.micro"
   vpc_security_group_ids = [aws_security_group.instance.id]
 
-  # Pode usar 'user_data' em Base64 diretamente:
-  user_data = base64encode(<<-EOF
-    #!/bin/bash
-    echo "Hello, World" > index.html
-    nohup busybox httpd -f -p ${var.server_port} &
-  	EOF
-  )
+  # Render the User Data script as a template
+  user_data = base64encode(templatefile("user-data.sh", {
+    server_port = var.server_port
+    db_address  = data.terraform_remote_state.db.outputs.address
+    db_port     = data.terraform_remote_state.db.outputs.port
+  }))
+
+  # user_data = base64encode(<<-EOF
+  #   #!/bin/bash
+  #   echo "Hello, World" > index.html
+  #   nohup busybox httpd -f -p ${var.server_port} &
+  #   EOF
+  #   )
 
   # Required when using a launch configuration with an auto scaling group
   lifecycle {
@@ -177,5 +162,27 @@ data "aws_subnets" "default" {
   filter {
     name   = "vpc-id"
     values = [data.aws_vpc.default.id]
+  }
+}
+
+data "terraform_remote_state" "db" {
+  backend = "s3"
+  config = {
+    bucket = "unique-name-bucket-jiow02"
+    key    = "stage/data-stores/mysql/terraform.tfstate"
+    region = "us-east-2"
+  }
+}
+
+terraform {
+  backend "s3" {
+    # Replace this with your bucket table name!
+    bucket = "unique-name-bucket-jiow02"
+    key    = "stage/services/webserver-cluster/terraform.tfstate"
+    region = "us-east-2"
+
+    # Replace this with your DynamoDB table name!
+    dynamodb_table = "unique-name-dynamo-jiow02"
+    encrypt        = true
   }
 }

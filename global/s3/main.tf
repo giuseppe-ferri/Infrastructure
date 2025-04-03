@@ -2,16 +2,6 @@ provider "aws" {
   region = "us-east-2"
 }
 
-output "s3_bucket_arn" {
-  description = "The ARN of the S3 bucket"
-  value       = aws_s3_bucket.terraform_state.arn
-}
-
-output "dynamo_table_name" {
-  description = "The name of the DynamoDB table"
-  value       = aws_dynamodb_table.terraform_locks.name
-}
-
 resource "aws_s3_bucket" "terraform_state" {
   bucket = "unique-name-bucket-jiow02"
 
@@ -76,4 +66,3 @@ resource "aws_dynamodb_table" "terraform_locks" {
 #     encrypt        = true
 #   }
 # }
-
