@@ -1,0 +1,5 @@
+.terraform
+*.tfstate
+*.tfstate.backup
+.prettierrc
+delete_vpcs.sh
